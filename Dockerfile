@@ -1,11 +1,22 @@
 FROM valkey/valkey:alpine
 
-# Install tiny HTTP server
 RUN apk add --no-cache busybox-extras
 
-# Expose both ports
 EXPOSE 6379 10000
 
-# Start Valkey + fake HTTP server
-CMD sh -c "valkey-server --bind 0.0.0.0 --requirepass maku0704 & \
-           while true; do echo -e 'HTTP/1.1 200 OK\n\nOK' | nc -l -p 10000; done"
+CMD sh -c "valkey-server \
+  --bind 0.0.0.0 \
+  --port 6379 \
+  --requirepass \"$VALKEY_PASSWORD\" \
+  --protected-mode yes \
+  --rename-command FLUSHALL \"\" \
+  --rename-command FLUSHDB \"\" \
+  --rename-command CONFIG \"\" \
+  --rename-command SHUTDOWN \"\" \
+  --rename-command KEYS \"\" \
+  --maxclients 50 \
+  --timeout 60 \
+  --tcp-keepalive 300 & \
+while true; do \
+  echo -e 'HTTP/1.1 200 OK\n\nOK' | nc -l -p 10000; \
+done"
